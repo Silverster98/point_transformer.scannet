@@ -51,6 +51,12 @@ python scripts/train_semseg.py --use_color --tag PointTrans_C_32768 --batch_size
 python scripts/eval_visualize.py --folder 2022-04-13_18-29-56_POINTTRANS_C_32768 --use_color --npoints 32768 --scene_id scene0654_00
 ```
 
+The results will be saved in your `CONF.OUTPUT_ROOT` folder. Some results are visualizing as follows:
+
+<center>
+<img src="./img/scene0000_00.png" width=200px> <img src="./img/scene0652_00.png" width=200px>
+</center>
+
 
 # References
 

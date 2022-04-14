@@ -37,16 +37,19 @@ The visualized `<scene_id>.ply` is stored in `preprocessing/label_point_clouds/`
 
 - test set: scene0600_00 ~ scene0706_00
 
-- use coordinates and color
+- use color
 
-- each scene use 65536 points
+- each scene use 32768 points
 
-```
-python scripts/train_semseg.py --use_color --npoints 65536
+```bash
+python scripts/train_semseg.py --use_color --tag PointTrans_C_32768 --batch_size 24 --epoch 200 --npoint 32768
 ```
 
 ## visualize segmentation results
 
+```bash
+python scripts/eval_visualize.py --folder 2022-04-13_18-29-56_POINTTRANS_C_32768 --use_color --npoints 32768 --scene_id scene0654_00
+```
 
 
 # References

@@ -11,12 +11,12 @@ import sys
 sys.path.append(".")
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../pointnet2/'))
 from utils.config import CONF
-from utils.dataset import ScannetDatasetAllScene, collate_random, collate_wholescene
+from utils.dataset import ScannetDatasetAllScene, collate_random
 
 def forward(args, model, coords, feats, offset):
     pred = []
     
-    output = model(coords, feats, offset)
+    output = model([coords, feats, offset])
     pred = output.view(args.batch_size, -1, CONF.NUM_CLASSES)
     outputs = pred.max(2)[1]
     return outputs
@@ -46,7 +46,7 @@ def predict_label(args, model, dataloader):
     for data in dataloader:
         # unpack
         coords, feats, targets, weights, _, offset  = data
-        coords, feats, targets, weights, offset = coords.cuda(), feats.cuda(), targets.cuda(), weights.cuda(), offset.cuda
+        coords, feats, targets, weights, offset = coords.cuda(), feats.cuda(), targets.cuda(), weights.cuda(), offset.cuda()
 
         # feed
         preds = forward(args, model, coords, feats, offset)

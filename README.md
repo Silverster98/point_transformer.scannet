@@ -57,6 +57,23 @@ The results will be saved in your `CONF.OUTPUT_ROOT` folder. Some results are vi
 <img src="./img/scene0000_00.png" width=200px> <img src="./img/scene0652_00.png" width=200px>
 </center>
 
+## visualize segmentation results of other dataset
+
+1. preprocess the `.ply` format data with `preprocessing/preprocess_pc.py`, converting the mesh to `.npy`
+
+```bash
+python ./preprocessing/preprocess_pc.py
+```
+
+Note: change the path config, i.e., `scene_dir` and `preprocess_scenes_dir`, or some code to use your own data
+
+2. change the `CONF.SCANNETV2_FILE` in `utils/config.py` to `preprocess_scenes_dir`
+
+3. run the original test code
+
+```bash
+python scripts/eval_visualize.py --folder 2022-04-13_18-29-56_POINTTRANS_C_32768 --use_color --npoints 32768 --scene_id scene_name
+```
 
 # References
 

@@ -4,10 +4,8 @@ from easydict import EasyDict
 CONF = EasyDict()
 
 # BASE PATH
-# CONF.ROOT = "${YOUR_PATH}/point_transformer.scannet" # TODO change this
-# CONF.SCANNET_DIR = "${YOUR_PATH}/scans" # TODO change this
-CONF.ROOT = "/home/wangzan/Projects/point_transformer.scannet" # TODO change this
-CONF.SCANNET_DIR =  "/home/wangzan/Data/scannet/scans" # TODO change this
+CONF.ROOT = "${YOUR_PATH}/point_transformer.scannet" # TODO change this
+CONF.SCANNET_DIR = "${YOUR_PATH}/scans" # TODO change this
 
 CONF.SCENE_NAMES = sorted(os.listdir(CONF.SCANNET_DIR))
 

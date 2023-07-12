@@ -2,7 +2,6 @@ import os
 import time
 import torch
 import numpy as np
-# from tensorboardX import SummaryWriter
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import StepLR
 
@@ -10,7 +9,7 @@ import sys
 sys.path.append(".")
 from utils.utils import decode_eta
 from utils.config import CONF
-from scripts.eval import compute_acc, compute_miou
+from scripts.eval_complete_scene import compute_acc, compute_miou
 
 ITER_REPORT_TEMPLATE = """
 ----------------------iter: [{global_iter_id}/{total_iter}]----------------------
@@ -59,7 +58,7 @@ BEST_REPORT_TEMPLATE = """
 """
 
 class Solver():
-    def __init__(self, model, dataset, dataloader, criterion, optimizer, batch_size, stamp, decay_step=10, decay_factor=0.7):
+    def __init__(self, model, dataset, dataloader, criterion, optimizer, batch_size, stamp, is_wholescene=True, decay_step=10, decay_factor=0.7):
         self.epoch = 0                    # set in __call__
         self.verbose = 0                  # set in __call__
         
@@ -70,6 +69,7 @@ class Solver():
         self.optimizer = optimizer
         self.batch_size = batch_size
         self.stamp = stamp
+        self.is_wholescene = is_wholescene
         self.scheduler = StepLR(optimizer, step_size=decay_step, gamma=decay_factor)
         self.best = {
             "epoch": 0,
@@ -153,9 +153,21 @@ class Solver():
         else:
             raise ValueError("invalid phase")
 
-    def _forward(self, coord, feat, offset):
-        output = self.model([coord, feat, offset])
-        return output
+    def _forward(self, coord, feat, is_wholescene):
+        if self.is_wholescene:
+            pred = []
+            coord_chunk, feat_chunk = torch.split(coord.squeeze(0), self.batch_size, 0), torch.split(feat.squeeze(0), self.batch_size, 0)
+            assert len(coord_chunk) == len(feat_chunk)
+            for coord, feat in zip(coord_chunk, feat_chunk):
+                output = self.model([coord, feat])
+                pred.append(output)
+            
+            pred = torch.cat(pred, dim=0).unsqueeze(0)
+        else:
+            output = self.model([coord, feat])
+            pred = output
+        
+        return pred
 
     def _backward(self):
         # optimize
@@ -203,16 +215,16 @@ class Solver():
             }
 
             # unpack the data
-            coords, feats, semantic_segs, sample_weights, fetch_time, offset = data
+            coords, feats, semantic_segs, sample_weights, fetch_time = data
 
-            coords, feats, semantic_segs, sample_weights, offset = coords.cuda(), feats.cuda(), semantic_segs.cuda(), sample_weights.cuda(), offset.cuda()
+            coords, feats, semantic_segs, sample_weights = coords.cuda(), feats.cuda(), semantic_segs.cuda(), sample_weights.cuda()
             self.log[phase][epoch_id]["fetch"].append(fetch_time)
 
             # forward
             start_forward = time.time()
-            preds = self._forward(coords, feats, offset)
+            preds = self._forward(coords, feats, self.is_wholescene)
             self._compute_loss(preds, semantic_segs, sample_weights)
-            self._eval(coords, preds, semantic_segs, sample_weights)
+            self._eval(coords, preds, semantic_segs, sample_weights, self.is_wholescene)
             self.log[phase][epoch_id]["forward"].append(time.time() - start_forward)
 
             # backward
@@ -275,14 +287,14 @@ class Solver():
             }
 
             # unpack the data
-            coords, feats, semantic_segs, sample_weights, fetch_time, offset = data
-            coords, feats, semantic_segs, sample_weights, offset = coords.cuda(), feats.cuda(), semantic_segs.cuda(), sample_weights.cuda(), offset.cuda()
+            coords, feats, semantic_segs, sample_weights, fetch_time = data
+            coords, feats, semantic_segs, sample_weights = coords.cuda(), feats.cuda(), semantic_segs.cuda(), sample_weights.cuda()
             self.log[phase][epoch_id]["fetch"].append(fetch_time)
 
             # forward
-            preds = self._forward(coords, feats, offset)
+            preds = self._forward(coords, feats, self.is_wholescene)
             self._compute_loss(preds, semantic_segs, sample_weights)
-            self._eval(coords, preds, semantic_segs, sample_weights)
+            self._eval(coords, preds, semantic_segs, sample_weights, self.is_wholescene)
 
             # record log
             self.log[phase][epoch_id]["loss"].append(self._running_log["loss"].item())
@@ -314,11 +326,17 @@ class Solver():
             model_root = os.path.join(CONF.OUTPUT_ROOT, self.stamp)
             torch.save(self.model.state_dict(), os.path.join(model_root, "model.pth"))
 
-    def _eval(self, coords, preds, targets, weights):
-        coords = coords.view(-1, 3).cpu().numpy()            # (B * N, 3)
-        preds = preds.max(1)[1].view(-1).cpu().numpy()       # (B * N)
-        targets = targets.view(-1).cpu().numpy()             # (B * N)
-        weights = weights.view(-1).cpu().numpy()             # (B * N)
+    def _eval(self, coords, preds, targets, weights, is_wholescene):
+        if is_wholescene:
+            coords = coords.squeeze(0).view(-1, 3).cpu().numpy()        # (CK * N, 3)
+            preds = preds.max(3)[1].squeeze(0).view(-1).cpu().numpy()   # (CK * N)
+            targets = targets.squeeze(0).view(-1).cpu().numpy()         # (CK * N)
+            weights = weights.squeeze(0).view(-1).cpu().numpy()         # (CK * N)
+        else:
+            coords = coords.view(-1, 3).cpu().numpy()            # (B * N, 3)
+            preds = preds.max(2)[1].view(-1).cpu().numpy()       # (B * N)
+            targets = targets.view(-1).cpu().numpy()             # (B * N)
+            weights = weights.view(-1).cpu().numpy()             # (B * N)
 
         pointacc, pointacc_per_class, voxacc, voxacc_per_class, _, acc_mask = compute_acc(coords, preds, targets, weights)
         pointmiou, voxmiou, miou_mask = compute_miou(coords, preds, targets, weights)

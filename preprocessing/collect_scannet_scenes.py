@@ -83,13 +83,6 @@ if __name__=='__main__':
     
     for i, scene_name in enumerate(CONF.SCENE_NAMES):
         try:
-
-            ## only use view 00, you can comment the following 3 lines to process all scenes
-            scene_view = int(scene_name[-2:])
-            if scene_view != 0:
-                continue
-            
-
             start = time.time()
             out_filename = scene_name+'.npy' # scene0000_00.npy
             collect_one_scene_data_label(scene_name, os.path.join(CONF.PREP_SCANS, out_filename))

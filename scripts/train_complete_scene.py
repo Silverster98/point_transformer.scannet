@@ -12,14 +12,14 @@ from torch.utils.data import DataLoader
 
 sys.path.append(os.path.join(os.getcwd())) # HACK add the root folder
 from utils.solver import Solver
-from utils.dataset import ScannetDatasetAllScene,  collate_random
+from utils.dataset import ScannetDatasetCompleteScene, collate_random
 from utils.loss import WeightedCrossEntropyLoss
 from utils.config import CONF
 
 
 def get_dataloader(args, scene_list, phase):
     
-    dataset = ScannetDatasetAllScene(phase, scene_list, npoints=args.npoints, is_weighting=not args.no_weighting, use_color=args.use_color, use_normal=args.use_normal)
+    dataset = ScannetDatasetCompleteScene(phase, scene_list, npoints=args.npoints, is_weighting=not args.no_weighting, use_color=args.use_color, use_normal=args.use_normal)
     dataloader = DataLoader(dataset, batch_size=args.batch_size, collate_fn=collate_random, num_workers=args.num_workers, pin_memory=True)
     
     return dataset, dataloader
@@ -31,14 +31,13 @@ def get_num_params(model):
     return num_params
 
 def get_solver(args, dataset, dataloader, stamp, fea_dim, classes):
-
-    from model.pointtransformer.pointtransformer_seg import pointtransformer_seg_repro as Model
+    from model.pointtransformer_seg import pointtransformer_seg_repro as Model
     model = Model(c=fea_dim, k=classes).cuda()
 
     num_params = get_num_params(model)
     criterion = WeightedCrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
-    solver = Solver(model, dataset, dataloader, criterion, optimizer, args.batch_size, stamp, args.ds, args.df)
+    solver = Solver(model, dataset, dataloader, criterion, optimizer, args.batch_size, stamp, args.use_wholescene, args.ds, args.df)
 
     return solver, num_params
 
@@ -118,6 +117,7 @@ if __name__ == '__main__':
     parser.add_argument("--no_weighting", action="store_true", help="weight the classes")
     parser.add_argument('--no_bn', action="store_true", help="do not apply batch normalization in pointnet++")
     parser.add_argument('--no_xyz', action="store_true", help="do not apply coordinates as features in pointnet++")
+    parser.add_argument("--use_wholescene", action="store_true", help="on the whole scene or on a random chunk")
     parser.add_argument("--use_color", action="store_true", help="use color values or not")
     parser.add_argument("--use_normal", action="store_true", help="use normals or not")
     parser.add_argument("--npoints", type=int, default=8192, help="the number of sampled points in a scene")

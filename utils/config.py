@@ -4,20 +4,21 @@ from easydict import EasyDict
 CONF = EasyDict()
 
 # BASE PATH
+# CONF.ROOT = "${YOUR_PATH}/point_transformer.scannet" # TODO change this
+# CONF.SCANNET_DIR = "${YOUR_PATH}/scans" # TODO change this
 CONF.ROOT = "/home/wangzan/Projects/point_transformer.scannet" # TODO change this
-CONF.OUTPUT_ROOT = "/home/wangzan/Outputs/point_transformer.scannet/outputs" # TODO change this
-CONF.SCANNET_DIR = "/home/wangzan/Data/scannet/scans" # TODO change this
-CONF.PREP_ROOT = os.path.dirname(CONF.SCANNET_DIR) # TODO if don't change this param, preprocessed data will be store in SCANNET_DIR/*
+CONF.SCANNET_DIR =  "/home/wangzan/Data/scannet/scans" # TODO change this
 
 CONF.SCENE_NAMES = sorted(os.listdir(CONF.SCANNET_DIR))
 
-CONF.PREP = os.path.join(CONF.PREP_ROOT, "preprocessing")
+CONF.PREP = os.path.join(CONF.ROOT, "preprocessing")
 CONF.PREP_SCANS = os.path.join(CONF.PREP, "scannet_scenes")
 CONF.SCAN_LABELS = os.path.join(CONF.PREP, "label_point_clouds")
+CONF.OUTPUT_ROOT = os.path.join(CONF.ROOT, "outputs")
 
-CONF.SCANNETV2_TRAIN = os.path.join(CONF.ROOT, "data/scannetv2_train_new.txt")
-CONF.SCANNETV2_VAL = os.path.join(CONF.ROOT, "data/scannetv2_val_new.txt")
-CONF.SCANNETV2_TEST = os.path.join(CONF.ROOT, "data/scannetv2_test_new.txt")
+CONF.SCANNETV2_TRAIN = os.path.join(CONF.ROOT, "data/scannetv2_train.txt")
+CONF.SCANNETV2_VAL = os.path.join(CONF.ROOT, "data/scannetv2_val.txt")
+CONF.SCANNETV2_TEST = os.path.join(CONF.ROOT, "data/scannetv2_test.txt")
 CONF.SCANNETV2_LIST = os.path.join(CONF.ROOT, "data/scannetv2.txt")
 CONF.SCANNETV2_FILE = os.path.join(CONF.PREP_SCANS, "{}.npy") # scene_id
 CONF.SCANNETV2_LABEL = os.path.join(CONF.SCAN_LABELS, "{}.ply") # scene_id

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from lib.pointops.functions import pointops
-
+from einops import rearrange
 
 class PointTransformerLayer(nn.Module):
     def __init__(self, in_planes, out_planes, share_planes=8, nsample=16):
@@ -157,7 +157,22 @@ class PointTransformerSeg(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, pxo):
-        p0, x0, o0 = pxo  # (n, 3), (n, c), (b)
+        if len(pxo) == 3:
+            p0, x0, o0 = pxo  # (n, 3), (n, c), (b)
+        elif len(pxo) == 2:
+            p, x = pxo # (b, n, 3), (b, n, c)
+
+            offset, count = [], 0
+            for item in p:
+                count += item.shape[0]
+                offset.append(count)
+
+            p0 = rearrange(p, 'b n d -> (b n) d')
+            x0 = rearrange(x, 'b n d -> (b n) d')
+            o0 = torch.IntTensor(offset).to(p0.device)
+        else:
+            raise ValueError('Input must be (p, x, o) or (p, x)')
+        
         x0 = p0 if self.c == 3 else torch.cat((p0, x0), 1)
         p1, x1, o1 = self.enc1([p0, x0, o0])
         p2, x2, o2 = self.enc2([p1, x1, o1])
@@ -170,7 +185,13 @@ class PointTransformerSeg(nn.Module):
         x2 = self.dec2[1:]([p2, self.dec2[0]([p2, x2, o2], [p3, x3, o3]), o2])[1]
         x1 = self.dec1[1:]([p1, self.dec1[0]([p1, x1, o1], [p2, x2, o2]), o1])[1]
         x = self.cls(x1)
-        return x
+
+        if len(pxo) == 3:
+            return x
+        elif len(pxo) == 2:
+            return rearrange(x, '(b n) d -> b n d', b=len(offset), n=offset[0])
+        else:
+            raise ValueError('Input must be (p, x, o) or (p, x)')
 
 
 def pointtransformer_seg_repro(**kwargs):

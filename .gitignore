@@ -26,4 +26,6 @@ outputs/
 .vscode
 .DS_Store
 *.egg-info
-*.slurm
+
+preprocessing/scannet_scenes
+preprocessing/label_point_clouds

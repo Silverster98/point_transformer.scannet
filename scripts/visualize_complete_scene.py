@@ -11,12 +11,12 @@ import sys
 sys.path.append(".")
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../pointnet2/'))
 from utils.config import CONF
-from utils.dataset import ScannetDatasetAllScene, collate_random
+from utils.dataset import ScannetDatasetCompleteScene, collate_random
 
-def forward(args, model, coords, feats, offset):
+def forward(args, model, coords, feats):
     pred = []
     
-    output = model([coords, feats, offset])
+    output = model([coords, feats])
     pred = output.view(args.batch_size, -1, CONF.NUM_CLASSES)
     outputs = pred.max(2)[1]
     return outputs
@@ -45,11 +45,11 @@ def predict_label(args, model, dataloader):
 
     for data in dataloader:
         # unpack
-        coords, feats, targets, weights, _, offset  = data
-        coords, feats, targets, weights, offset = coords.cuda(), feats.cuda(), targets.cuda(), weights.cuda(), offset.cuda()
+        coords, feats, targets, weights, _  = data
+        coords, feats, targets, weights = coords.cuda(), feats.cuda(), targets.cuda(), weights.cuda()
 
         # feed
-        preds = forward(args, model, coords, feats, offset)
+        preds = forward(args, model, coords, feats)
 
         # dump
         coords = coords.squeeze(0).view(-1, 3).cpu().numpy()
@@ -110,7 +110,7 @@ def evaluate(args):
     # prepare data
     print("preparing data...")
     scene_list = get_scene_list(args)
-    dataset = ScannetDatasetAllScene('test', scene_list, npoints=args.npoints, use_color=args.use_color, use_normal=args.use_normal)
+    dataset = ScannetDatasetCompleteScene('test', scene_list, npoints=args.npoints, use_color=args.use_color, use_normal=args.use_normal)
     dataset.generate_chunks()
     dataloader = DataLoader(dataset, batch_size=1, collate_fn=collate_random)
 
@@ -119,7 +119,7 @@ def evaluate(args):
     model_path = os.path.join(CONF.OUTPUT_ROOT, args.folder, "model.pth")
     fea_dim = 3 + int(args.use_color) * 3 + int(args.use_normal) * 3
 
-    from model.pointtransformer.pointtransformer_seg import pointtransformer_seg_repro as Model
+    from model.pointtransformer_seg import pointtransformer_seg_repro as Model
     model = Model(c=fea_dim, k=CONF.NUM_CLASSES).cuda()
     model.load_state_dict(torch.load(model_path))
     model.eval()

@@ -99,7 +99,7 @@ If you use this code, please cite the follow two papers:
 }
 ```
 
-# Acknowledgement
+# Acknowledgements
 
 * [Pointnet2.ScanNet](https://github.com/daveredrum/Pointnet2.ScanNet)
 

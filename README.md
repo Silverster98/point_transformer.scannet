@@ -29,26 +29,22 @@ python preprocessing/visualize_prep_scene.py --scene_id <scene_id>
 
 The visualized `<scene_id>.ply` is stored in `preprocessing/label_point_clouds/` - Drag that file into MeshLab for visualization.
 
-## train
+## Trian with chunked scenes
 
-### setting
+### Setting
 
-- train & validate set: scene0000_00 ~ scene0599_00
+Train-test split follows the [Pointnet2.ScanNet](https://github.com/daveredrum/Pointnet2.ScanNet)
 
-- test set: scene0600_00 ~ scene0706_00
-
-- use color
-
-- each scene use 32768 points
+### Trian
 
 ```bash
-python scripts/train_semseg.py --use_color --tag PointTrans_C_32768 --batch_size 24 --epoch 200 --npoint 32768
+python scripts/train_partial_scene.py --use_color --tag POINTTRANS_C_N8192 --epoch 200 --npoint 8192
 ```
 
-## visualize segmentation results
+### Visualize
 
 ```bash
-python scripts/eval_visualize.py --folder 2022-04-13_18-29-56_POINTTRANS_C_32768 --use_color --npoints 32768 --scene_id scene0654_00
+python scripts/visualize_partial_scene.py --folder ${EXP_STAMP} --use_color --npoints 8192 --scene_id scene0654_00
 ```
 
 The results will be saved in your `CONF.OUTPUT_ROOT` folder. Some results are visualizing as follows:
@@ -57,22 +53,22 @@ The results will be saved in your `CONF.OUTPUT_ROOT` folder. Some results are vi
 <img src="./img/scene0000_00.png" width=200px> <img src="./img/scene0652_00.png" width=200px>
 </center>
 
-## visualize segmentation results of other dataset
+## Train with complete scenes
 
-1. preprocess the `.ply` format data with `preprocessing/preprocess_pc.py`, converting the mesh to `.npy`
+### Setting
+
+Train-test split follows the [Pointnet2.ScanNet](https://github.com/daveredrum/Pointnet2.ScanNet)
+
+### Trian
 
 ```bash
-python ./preprocessing/preprocess_pc.py
+python scripts/train_complete_scene.py --use_color --tag POINTTRANS_C_N32768 --epoch 200 --npoint 32768
 ```
 
-Note: change the path config, i.e., `scene_dir` and `preprocess_scenes_dir`, or some code to use your own data
-
-2. change the `CONF.SCANNETV2_FILE` in `utils/config.py` to `preprocess_scenes_dir`
-
-3. run the original test code
+### Visualize
 
 ```bash
-python scripts/eval_visualize.py --folder 2022-04-13_18-29-56_POINTTRANS_C_32768 --use_color --npoints 32768 --scene_id scene_name
+python scripts/visualize_complete_scene.py --folder ${EXP_STAMP} --use_color --npoints 32768 --scene_id scene0654_00
 ```
 
 # References

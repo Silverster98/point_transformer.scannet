@@ -9,7 +9,10 @@ from utils.config import CONF
 
 def visualize(args):
     print("visualizing...")
-    scene = np.load(CONF.SCANNETV2_FILE.format(args.scene_id))
+    if os.path.exists(args.scene_id):
+        scene = np.load(args.scene_id)
+    else:
+        scene = np.load(CONF.SCANNETV2_FILE.format(args.scene_id))
 
     vertex = []
     for i in range(scene.shape[0]):

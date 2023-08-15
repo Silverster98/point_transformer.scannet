@@ -351,7 +351,10 @@ class ScannetDatasetCompleteScene():
         semantic_labels_list = []
         
         for scene_id in tqdm(self.scene_list):
-            scene_data = np.load(CONF.SCANNETV2_FILE.format(scene_id))
+            if os.path.exists(scene_id):
+                scene_data = np.load(scene_id)
+            else:
+                scene_data = np.load(CONF.SCANNETV2_FILE.format(scene_id))
             label = scene_data[:, 10]
 
             # append

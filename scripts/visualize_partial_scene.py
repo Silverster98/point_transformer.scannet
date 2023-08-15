@@ -15,7 +15,7 @@ from utils.dataset import ScannetDatasetCompleteScene, collate_random
 
 def forward(args, model, coords, feats):
     pred = []
-    coord_chunk, feat_chunk = torch.split(coords.squeeze(0), args.batch_size, 0), torch.split(feats.squeeze(0), args.batch_size, 0)
+    coord_chunk, feat_chunk = torch.split(coords, args.batch_size, 0), torch.split(feats, args.batch_size, 0)
     assert len(coord_chunk) == len(feat_chunk)
     for coord, feat in zip(coord_chunk, feat_chunk):
         output = model([coord, feat])
@@ -99,7 +99,11 @@ def visualize(args, preds):
     output_pc = PlyData([output_pc])
     output_root = os.path.join(CONF.OUTPUT_ROOT, args.folder, "preds")
     os.makedirs(output_root, exist_ok=True)
-    output_pc.write(os.path.join(output_root, "{}.ply".format(args.scene_id)))
+    if os.path.exists(args.scene_id):
+        scene_id = args.scene_id.split("/")[-1]
+    else:
+        scene_id = args.scene_id
+    output_pc.write(os.path.join(output_root, "{}.ply".format(scene_id)))
 
 
 def get_scene_list(args):
